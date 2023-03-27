@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  tween.h                                                               */
+/*  threen.h                                                              */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,13 +28,13 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#ifndef TWEEN_H
-#define TWEEN_H
+#ifndef THREEN_H
+#define THREEN_H
 
 #include "scene/main/node.h"
 
-class Tween : public Node {
-	GDCLASS(Tween, Node);
+class Threen : public Node {
+	GDCLASS(Threen, Node);
 
 public:
 	enum TweenProcessMode {
@@ -151,7 +151,7 @@ protected:
 	static void _bind_methods();
 
 public:
-	static real_t run_equation(Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type, real_t p_time, real_t p_initial, real_t p_delta, real_t p_duration);
+	static real_t run_equation(Threen::TransitionType p_trans_type, Threen::EaseType p_ease_type, real_t p_time, real_t p_initial, real_t p_delta, real_t p_duration);
 
 	bool is_active() const;
 	void set_active(bool p_active);
@@ -188,12 +188,12 @@ public:
 	bool targeting_property(Object *p_object, NodePath p_property, Object *p_initial, NodePath p_initial_property, Variant p_final_val, real_t p_duration, TransitionType p_trans_type = TRANS_LINEAR, EaseType p_ease_type = EASE_IN_OUT, real_t p_delay = 0);
 	bool targeting_method(Object *p_object, StringName p_method, Object *p_initial, StringName p_initial_method, Variant p_final_val, real_t p_duration, TransitionType p_trans_type = TRANS_LINEAR, EaseType p_ease_type = EASE_IN_OUT, real_t p_delay = 0);
 
-	Tween();
-	~Tween();
+	Threen();
+	~Threen();
 };
 
-VARIANT_ENUM_CAST(Tween::TweenProcessMode);
-VARIANT_ENUM_CAST(Tween::TransitionType);
-VARIANT_ENUM_CAST(Tween::EaseType);
+VARIANT_ENUM_CAST(Threen::TweenProcessMode);
+VARIANT_ENUM_CAST(Threen::TransitionType);
+VARIANT_ENUM_CAST(Threen::EaseType);
 
-#endif // TWEEN_H
+#endif // THREEN_H

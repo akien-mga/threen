@@ -1,5 +1,5 @@
 /**************************************************************************/
-/*  tween.cpp                                                             */
+/*  threen.cpp                                                            */
 /**************************************************************************/
 /*                         This file is part of:                          */
 /*                             GODOT ENGINE                               */
@@ -28,12 +28,12 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                 */
 /**************************************************************************/
 
-#include "tween.h"
+#include "threen.h"
 
 #include "core/method_bind_ext.gen.inc"
 #include "scene/animation/easing_equations.h"
 
-Tween::interpolater Tween::interpolaters[Tween::TRANS_COUNT][Tween::EASE_COUNT] = {
+Threen::interpolater Threen::interpolaters[Threen::TRANS_COUNT][Threen::EASE_COUNT] = {
 	{ &linear::in, &linear::in, &linear::in, &linear::in }, // Linear is the same for each easing.
 	{ &sine::in, &sine::out, &sine::in_out, &sine::out_in },
 	{ &quint::in, &quint::out, &quint::in_out, &quint::out_in },
@@ -47,7 +47,7 @@ Tween::interpolater Tween::interpolaters[Tween::TRANS_COUNT][Tween::EASE_COUNT] 
 	{ &back::in, &back::out, &back::in_out, &back::out_in },
 };
 
-real_t Tween::run_equation(Tween::TransitionType p_trans_type, Tween::EaseType p_ease_type, real_t p_time, real_t p_initial, real_t p_delta, real_t p_duration) {
+real_t Threen::run_equation(Threen::TransitionType p_trans_type, Threen::EaseType p_ease_type, real_t p_time, real_t p_initial, real_t p_delta, real_t p_duration) {
 	if (p_duration == 0) {
 		// Special case to avoid dividing by 0 in equations.
 		return p_initial + p_delta;
@@ -58,7 +58,7 @@ real_t Tween::run_equation(Tween::TransitionType p_trans_type, Tween::EaseType p
 	return func(p_time, p_initial, p_delta, p_duration);
 }
 
-void Tween::_add_pending_command(StringName p_key, const Variant &p_arg1, const Variant &p_arg2, const Variant &p_arg3, const Variant &p_arg4, const Variant &p_arg5, const Variant &p_arg6, const Variant &p_arg7, const Variant &p_arg8, const Variant &p_arg9, const Variant &p_arg10) {
+void Threen::_add_pending_command(StringName p_key, const Variant &p_arg1, const Variant &p_arg2, const Variant &p_arg3, const Variant &p_arg4, const Variant &p_arg5, const Variant &p_arg6, const Variant &p_arg7, const Variant &p_arg8, const Variant &p_arg9, const Variant &p_arg10) {
 	// Add a new pending command and reference it
 	pending_commands.push_back(PendingCommand());
 	PendingCommand &cmd = pending_commands.back()->get();
@@ -125,7 +125,7 @@ void Tween::_add_pending_command(StringName p_key, const Variant &p_arg1, const 
 	}
 }
 
-void Tween::_process_pending_commands() {
+void Threen::_process_pending_commands() {
 	// For each pending command...
 	for (List<PendingCommand>::Element *E = pending_commands.front(); E; E = E->next()) {
 		// Get the command
@@ -154,7 +154,7 @@ void Tween::_process_pending_commands() {
 	pending_commands.clear();
 }
 
-bool Tween::_set(const StringName &p_name, const Variant &p_value) {
+bool Threen::_set(const StringName &p_name, const Variant &p_value) {
 	// Set the correct attribute based on the given name
 	String name = p_name;
 	if (name == "playback/speed" || name == "speed") { // Backwards compatibility
@@ -172,7 +172,7 @@ bool Tween::_set(const StringName &p_name, const Variant &p_value) {
 	return false;
 }
 
-bool Tween::_get(const StringName &p_name, Variant &r_ret) const {
+bool Threen::_get(const StringName &p_name, Variant &r_ret) const {
 	// Get the correct attribute based on the given name
 	String name = p_name;
 	if (name == "playback/speed") { // Backwards compatibility
@@ -190,14 +190,14 @@ bool Tween::_get(const StringName &p_name, Variant &r_ret) const {
 	return false;
 }
 
-void Tween::_get_property_list(List<PropertyInfo> *p_list) const {
-	// Add the property info for the Tween object
+void Threen::_get_property_list(List<PropertyInfo> *p_list) const {
+	// Add the property info for the Threen object
 	p_list->push_back(PropertyInfo(Variant::BOOL, "playback/active", PROPERTY_HINT_NONE, ""));
 	p_list->push_back(PropertyInfo(Variant::BOOL, "playback/repeat", PROPERTY_HINT_NONE, ""));
 	p_list->push_back(PropertyInfo(Variant::REAL, "playback/speed", PROPERTY_HINT_RANGE, "-64,64,0.01"));
 }
 
-void Tween::_notification(int p_what) {
+void Threen::_notification(int p_what) {
 	// What notification did we receive?
 	switch (p_what) {
 		case NOTIFICATION_ENTER_TREE: {
@@ -249,46 +249,46 @@ void Tween::_notification(int p_what) {
 	}
 }
 
-void Tween::_bind_methods() {
+void Threen::_bind_methods() {
 	// Bind getters and setters
-	ClassDB::bind_method(D_METHOD("is_active"), &Tween::is_active);
-	ClassDB::bind_method(D_METHOD("set_active", "active"), &Tween::set_active);
+	ClassDB::bind_method(D_METHOD("is_active"), &Threen::is_active);
+	ClassDB::bind_method(D_METHOD("set_active", "active"), &Threen::set_active);
 
-	ClassDB::bind_method(D_METHOD("is_repeat"), &Tween::is_repeat);
-	ClassDB::bind_method(D_METHOD("set_repeat", "repeat"), &Tween::set_repeat);
+	ClassDB::bind_method(D_METHOD("is_repeat"), &Threen::is_repeat);
+	ClassDB::bind_method(D_METHOD("set_repeat", "repeat"), &Threen::set_repeat);
 
-	ClassDB::bind_method(D_METHOD("set_speed_scale", "speed"), &Tween::set_speed_scale);
-	ClassDB::bind_method(D_METHOD("get_speed_scale"), &Tween::get_speed_scale);
+	ClassDB::bind_method(D_METHOD("set_speed_scale", "speed"), &Threen::set_speed_scale);
+	ClassDB::bind_method(D_METHOD("get_speed_scale"), &Threen::get_speed_scale);
 
-	ClassDB::bind_method(D_METHOD("set_tween_process_mode", "mode"), &Tween::set_tween_process_mode);
-	ClassDB::bind_method(D_METHOD("get_tween_process_mode"), &Tween::get_tween_process_mode);
+	ClassDB::bind_method(D_METHOD("set_tween_process_mode", "mode"), &Threen::set_tween_process_mode);
+	ClassDB::bind_method(D_METHOD("get_tween_process_mode"), &Threen::get_tween_process_mode);
 
-	// Bind the various Tween control methods
-	ClassDB::bind_method(D_METHOD("start"), &Tween::start);
-	ClassDB::bind_method(D_METHOD("reset", "object", "key"), &Tween::reset, DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("reset_all"), &Tween::reset_all);
-	ClassDB::bind_method(D_METHOD("stop", "object", "key"), &Tween::stop, DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("stop_all"), &Tween::stop_all);
-	ClassDB::bind_method(D_METHOD("resume", "object", "key"), &Tween::resume, DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("resume_all"), &Tween::resume_all);
-	ClassDB::bind_method(D_METHOD("remove", "object", "key"), &Tween::remove, DEFVAL(""));
-	ClassDB::bind_method(D_METHOD("_remove_by_uid", "uid"), &Tween::_remove_by_uid);
-	ClassDB::bind_method(D_METHOD("remove_all"), &Tween::remove_all);
-	ClassDB::bind_method(D_METHOD("seek", "time"), &Tween::seek);
-	ClassDB::bind_method(D_METHOD("tell"), &Tween::tell);
-	ClassDB::bind_method(D_METHOD("get_runtime"), &Tween::get_runtime);
+	// Bind the various Threen control methods
+	ClassDB::bind_method(D_METHOD("start"), &Threen::start);
+	ClassDB::bind_method(D_METHOD("reset", "object", "key"), &Threen::reset, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("reset_all"), &Threen::reset_all);
+	ClassDB::bind_method(D_METHOD("stop", "object", "key"), &Threen::stop, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("stop_all"), &Threen::stop_all);
+	ClassDB::bind_method(D_METHOD("resume", "object", "key"), &Threen::resume, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("resume_all"), &Threen::resume_all);
+	ClassDB::bind_method(D_METHOD("remove", "object", "key"), &Threen::remove, DEFVAL(""));
+	ClassDB::bind_method(D_METHOD("_remove_by_uid", "uid"), &Threen::_remove_by_uid);
+	ClassDB::bind_method(D_METHOD("remove_all"), &Threen::remove_all);
+	ClassDB::bind_method(D_METHOD("seek", "time"), &Threen::seek);
+	ClassDB::bind_method(D_METHOD("tell"), &Threen::tell);
+	ClassDB::bind_method(D_METHOD("get_runtime"), &Threen::get_runtime);
 
 	// Bind interpolation and follow methods
-	ClassDB::bind_method(D_METHOD("interpolate_property", "object", "property", "initial_val", "final_val", "duration", "trans_type", "ease_type", "delay"), &Tween::interpolate_property, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("interpolate_method", "object", "method", "initial_val", "final_val", "duration", "trans_type", "ease_type", "delay"), &Tween::interpolate_method, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("interpolate_callback", "object", "duration", "callback", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6", "arg7", "arg8"), &Tween::interpolate_callback, DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()));
-	ClassDB::bind_method(D_METHOD("interpolate_deferred_callback", "object", "duration", "callback", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6", "arg7", "arg8"), &Tween::interpolate_deferred_callback, DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()));
-	ClassDB::bind_method(D_METHOD("follow_property", "object", "property", "initial_val", "target", "target_property", "duration", "trans_type", "ease_type", "delay"), &Tween::follow_property, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("follow_method", "object", "method", "initial_val", "target", "target_method", "duration", "trans_type", "ease_type", "delay"), &Tween::follow_method, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("targeting_property", "object", "property", "initial", "initial_val", "final_val", "duration", "trans_type", "ease_type", "delay"), &Tween::targeting_property, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
-	ClassDB::bind_method(D_METHOD("targeting_method", "object", "method", "initial", "initial_method", "final_val", "duration", "trans_type", "ease_type", "delay"), &Tween::targeting_method, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("interpolate_property", "object", "property", "initial_val", "final_val", "duration", "trans_type", "ease_type", "delay"), &Threen::interpolate_property, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("interpolate_method", "object", "method", "initial_val", "final_val", "duration", "trans_type", "ease_type", "delay"), &Threen::interpolate_method, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("interpolate_callback", "object", "duration", "callback", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6", "arg7", "arg8"), &Threen::interpolate_callback, DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()));
+	ClassDB::bind_method(D_METHOD("interpolate_deferred_callback", "object", "duration", "callback", "arg1", "arg2", "arg3", "arg4", "arg5", "arg6", "arg7", "arg8"), &Threen::interpolate_deferred_callback, DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()), DEFVAL(Variant()));
+	ClassDB::bind_method(D_METHOD("follow_property", "object", "property", "initial_val", "target", "target_property", "duration", "trans_type", "ease_type", "delay"), &Threen::follow_property, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("follow_method", "object", "method", "initial_val", "target", "target_method", "duration", "trans_type", "ease_type", "delay"), &Threen::follow_method, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("targeting_property", "object", "property", "initial", "initial_val", "final_val", "duration", "trans_type", "ease_type", "delay"), &Threen::targeting_property, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
+	ClassDB::bind_method(D_METHOD("targeting_method", "object", "method", "initial", "initial_method", "final_val", "duration", "trans_type", "ease_type", "delay"), &Threen::targeting_method, DEFVAL(TRANS_LINEAR), DEFVAL(EASE_IN_OUT), DEFVAL(0));
 
-	// Add the Tween signals
+	// Add the Threen signals
 	ADD_SIGNAL(MethodInfo("tween_started", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key")));
 	ADD_SIGNAL(MethodInfo("tween_step", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key"), PropertyInfo(Variant::REAL, "elapsed"), PropertyInfo(Variant::OBJECT, "value")));
 	ADD_SIGNAL(MethodInfo("tween_completed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key")));
@@ -323,7 +323,7 @@ void Tween::_bind_methods() {
 	BIND_ENUM_CONSTANT(EASE_OUT_IN);
 }
 
-Variant Tween::_get_initial_val(const InterpolateData &p_data) const {
+Variant Threen::_get_initial_val(const InterpolateData &p_data) const {
 	// What type of data are we interpolating?
 	switch (p_data.type) {
 		case INTER_PROPERTY:
@@ -363,7 +363,7 @@ Variant Tween::_get_initial_val(const InterpolateData &p_data) const {
 	return p_data.delta_val;
 }
 
-Variant Tween::_get_final_val(const InterpolateData &p_data) const {
+Variant Threen::_get_final_val(const InterpolateData &p_data) const {
 	switch (p_data.type) {
 		case FOLLOW_PROPERTY:
 		case FOLLOW_METHOD: {
@@ -400,7 +400,7 @@ Variant Tween::_get_final_val(const InterpolateData &p_data) const {
 	}
 }
 
-Variant &Tween::_get_delta_val(InterpolateData &p_data) {
+Variant &Threen::_get_delta_val(InterpolateData &p_data) {
 	// What kind of data are we interpolating?
 	switch (p_data.type) {
 		case INTER_PROPERTY:
@@ -463,7 +463,7 @@ Variant &Tween::_get_delta_val(InterpolateData &p_data) {
 	return p_data.initial_val;
 }
 
-Variant Tween::_run_equation(InterpolateData &p_data) {
+Variant Threen::_run_equation(InterpolateData &p_data) {
 	// Get the initial and delta values from the data
 	Variant initial_val = _get_initial_val(p_data);
 	Variant &delta_val = _get_delta_val(p_data);
@@ -647,7 +647,7 @@ Variant Tween::_run_equation(InterpolateData &p_data) {
 	return result;
 }
 
-bool Tween::_apply_tween_value(InterpolateData &p_data, Variant &value) {
+bool Threen::_apply_tween_value(InterpolateData &p_data, Variant &value) {
 	// Get the object we want to apply the new value to
 	Object *object = ObjectDB::get_instance(p_data.id);
 	ERR_FAIL_COND_V(object == nullptr, false);
@@ -691,7 +691,7 @@ bool Tween::_apply_tween_value(InterpolateData &p_data, Variant &value) {
 	return true;
 }
 
-void Tween::_tween_process(float p_delta) {
+void Threen::_tween_process(float p_delta) {
 	// Process all of the pending commands
 	_process_pending_commands();
 
@@ -857,19 +857,19 @@ void Tween::_tween_process(float p_delta) {
 	}
 }
 
-void Tween::set_tween_process_mode(TweenProcessMode p_mode) {
+void Threen::set_tween_process_mode(TweenProcessMode p_mode) {
 	tween_process_mode = p_mode;
 }
 
-Tween::TweenProcessMode Tween::get_tween_process_mode() const {
+Threen::TweenProcessMode Threen::get_tween_process_mode() const {
 	return tween_process_mode;
 }
 
-bool Tween::is_active() const {
+bool Threen::is_active() const {
 	return is_processing_internal() || is_physics_processing_internal();
 }
 
-void Tween::set_active(bool p_active) {
+void Threen::set_active(bool p_active) {
 	// Do nothing if it's the same active mode that we currently are
 	if (is_active() == p_active) {
 		return;
@@ -886,24 +886,24 @@ void Tween::set_active(bool p_active) {
 	}
 }
 
-bool Tween::is_repeat() const {
+bool Threen::is_repeat() const {
 	return repeat;
 }
 
-void Tween::set_repeat(bool p_repeat) {
+void Threen::set_repeat(bool p_repeat) {
 	repeat = p_repeat;
 }
 
-void Tween::set_speed_scale(float p_speed) {
+void Threen::set_speed_scale(float p_speed) {
 	speed_scale = p_speed;
 }
 
-float Tween::get_speed_scale() const {
+float Threen::get_speed_scale() const {
 	return speed_scale;
 }
 
-bool Tween::start() {
-	ERR_FAIL_COND_V_MSG(!is_inside_tree(), false, "Tween was not added to the SceneTree!");
+bool Threen::start() {
+	ERR_FAIL_COND_V_MSG(!is_inside_tree(), false, "Threen was not added to the SceneTree!");
 
 	// Are there any pending updates?
 	if (pending_update != 0) {
@@ -931,7 +931,7 @@ bool Tween::start() {
 	return true;
 }
 
-bool Tween::reset(Object *p_object, StringName p_key) {
+bool Threen::reset(Object *p_object, StringName p_key) {
 	// Find all interpolations that use the same object and target string
 	pending_update++;
 	for (List<InterpolateData>::Element *E = interpolates.front(); E; E = E->next()) {
@@ -958,7 +958,7 @@ bool Tween::reset(Object *p_object, StringName p_key) {
 	return true;
 }
 
-bool Tween::reset_all() {
+bool Threen::reset_all() {
 	// Go through all interpolations
 	pending_update++;
 	for (List<InterpolateData>::Element *E = interpolates.front(); E; E = E->next()) {
@@ -976,7 +976,7 @@ bool Tween::reset_all() {
 	return true;
 }
 
-bool Tween::stop(Object *p_object, StringName p_key) {
+bool Threen::stop(Object *p_object, StringName p_key) {
 	// Find the tween that has the given target object and string key
 	pending_update++;
 	for (List<InterpolateData>::Element *E = interpolates.front(); E; E = E->next()) {
@@ -997,7 +997,7 @@ bool Tween::stop(Object *p_object, StringName p_key) {
 	return true;
 }
 
-bool Tween::stop_all() {
+bool Threen::stop_all() {
 	// We no longer need to be active since all tweens have been stopped
 	set_active(false);
 	was_stopped = true;
@@ -1013,7 +1013,7 @@ bool Tween::stop_all() {
 	return true;
 }
 
-bool Tween::resume(Object *p_object, StringName p_key) {
+bool Threen::resume(Object *p_object, StringName p_key) {
 	// We need to be activated
 	// TODO: What if no tween is found??
 	set_active(true);
@@ -1037,7 +1037,7 @@ bool Tween::resume(Object *p_object, StringName p_key) {
 	return true;
 }
 
-bool Tween::resume_all() {
+bool Threen::resume_all() {
 	// Set ourselves active so we can process tweens
 	// TODO: What if there are no tweens? We get set to active for no reason!
 	set_active(true);
@@ -1053,7 +1053,7 @@ bool Tween::resume_all() {
 	return true;
 }
 
-bool Tween::remove(Object *p_object, StringName p_key) {
+bool Threen::remove(Object *p_object, StringName p_key) {
 	// If we are still updating, call this function again later
 	if (pending_update != 0) {
 		call_deferred("remove", p_object, p_key);
@@ -1084,7 +1084,7 @@ bool Tween::remove(Object *p_object, StringName p_key) {
 	return true;
 }
 
-void Tween::_remove_by_uid(int uid) {
+void Threen::_remove_by_uid(int uid) {
 	// If we are still updating, call this function again later
 	if (pending_update != 0) {
 		call_deferred("_remove_by_uid", uid);
@@ -1101,7 +1101,7 @@ void Tween::_remove_by_uid(int uid) {
 	}
 }
 
-void Tween::_push_interpolate_data(InterpolateData &p_data) {
+void Threen::_push_interpolate_data(InterpolateData &p_data) {
 	pending_update++;
 
 	// Add the new interpolation
@@ -1111,7 +1111,7 @@ void Tween::_push_interpolate_data(InterpolateData &p_data) {
 	pending_update--;
 }
 
-bool Tween::remove_all() {
+bool Threen::remove_all() {
 	// If we are still updating, call this function again later
 	if (pending_update != 0) {
 		call_deferred("remove_all");
@@ -1127,7 +1127,7 @@ bool Tween::remove_all() {
 	return true;
 }
 
-bool Tween::seek(real_t p_time) {
+bool Threen::seek(real_t p_time) {
 	// Go through each interpolation...
 	pending_update++;
 	for (List<InterpolateData>::Element *E = interpolates.front(); E; E = E->next()) {
@@ -1164,7 +1164,7 @@ bool Tween::seek(real_t p_time) {
 	return true;
 }
 
-real_t Tween::tell() const {
+real_t Threen::tell() const {
 	// We want to grab the position of the furthest along tween
 	pending_update++;
 	real_t pos = 0;
@@ -1182,7 +1182,7 @@ real_t Tween::tell() const {
 	return pos;
 }
 
-real_t Tween::get_runtime() const {
+real_t Threen::get_runtime() const {
 	// If the tween isn't moving, it'll last forever
 	if (speed_scale == 0) {
 		return INFINITY;
@@ -1207,7 +1207,7 @@ real_t Tween::get_runtime() const {
 	return runtime / speed_scale;
 }
 
-bool Tween::_calc_delta_val(const Variant &p_initial_val, const Variant &p_final_val, Variant &p_delta_val) {
+bool Threen::_calc_delta_val(const Variant &p_initial_val, const Variant &p_final_val, Variant &p_delta_val) {
 	// Get the initial, final, and delta values
 	const Variant &initial_val = p_initial_val;
 	const Variant &final_val = p_final_val;
@@ -1345,7 +1345,7 @@ bool Tween::_calc_delta_val(const Variant &p_initial_val, const Variant &p_final
 	return true;
 }
 
-bool Tween::_build_interpolation(InterpolateType p_interpolation_type, Object *p_object, NodePath *p_property, StringName *p_method, Variant p_initial_val, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::_build_interpolation(InterpolateType p_interpolation_type, Object *p_object, NodePath *p_property, StringName *p_method, Variant p_initial_val, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// TODO: Add initialization+implementation for remaining interpolation types
 	// TODO: Fix this method's organization to take advantage of the type
 
@@ -1359,7 +1359,7 @@ bool Tween::_build_interpolation(InterpolateType p_interpolation_type, Object *p
 	// Validate and apply interpolation data
 
 	// Give it the object
-	ERR_FAIL_COND_V_MSG(p_object == nullptr, false, "Invalid object provided to Tween.");
+	ERR_FAIL_COND_V_MSG(p_object == nullptr, false, "Invalid object provided to Threen.");
 	data.id = p_object->get_instance_id();
 
 	// Validate the initial and final values
@@ -1368,19 +1368,19 @@ bool Tween::_build_interpolation(InterpolateType p_interpolation_type, Object *p
 	data.final_val = p_final_val;
 
 	// Check the Duration
-	ERR_FAIL_COND_V_MSG(p_duration < 0, false, "Only non-negative duration values allowed in Tweens.");
+	ERR_FAIL_COND_V_MSG(p_duration < 0, false, "Only non-negative duration values allowed in Threens.");
 	data.duration = p_duration;
 
-	// Tween Delay
-	ERR_FAIL_COND_V_MSG(p_delay < 0, false, "Only non-negative delay values allowed in Tweens.");
+	// Threen Delay
+	ERR_FAIL_COND_V_MSG(p_delay < 0, false, "Only non-negative delay values allowed in Threens.");
 	data.delay = p_delay;
 
 	// Transition type
-	ERR_FAIL_COND_V_MSG(p_trans_type < 0 || p_trans_type >= TRANS_COUNT, false, "Invalid transition type provided to Tween.");
+	ERR_FAIL_COND_V_MSG(p_trans_type < 0 || p_trans_type >= TRANS_COUNT, false, "Invalid transition type provided to Threen.");
 	data.trans_type = p_trans_type;
 
 	// Easing type
-	ERR_FAIL_COND_V_MSG(p_ease_type < 0 || p_ease_type >= EASE_COUNT, false, "Invalid easing type provided to Tween.");
+	ERR_FAIL_COND_V_MSG(p_ease_type < 0 || p_ease_type >= EASE_COUNT, false, "Invalid easing type provided to Threen.");
 	data.ease_type = p_ease_type;
 
 	// Is the property defined?
@@ -1388,7 +1388,7 @@ bool Tween::_build_interpolation(InterpolateType p_interpolation_type, Object *p
 		// Check that the object actually contains the given property
 		bool prop_valid = false;
 		p_object->get_indexed(p_property->get_subnames(), &prop_valid);
-		ERR_FAIL_COND_V_MSG(!prop_valid, false, "Tween target object has no property named: " + p_property->get_concatenated_subnames() + ".");
+		ERR_FAIL_COND_V_MSG(!prop_valid, false, "Threen target object has no property named: " + p_property->get_concatenated_subnames() + ".");
 
 		data.key = p_property->get_subnames();
 		data.concatenated_key = p_property->get_concatenated_subnames();
@@ -1397,7 +1397,7 @@ bool Tween::_build_interpolation(InterpolateType p_interpolation_type, Object *p
 	// Is the method defined?
 	if (p_method) {
 		// Does the object even have the requested method?
-		ERR_FAIL_COND_V_MSG(!p_object->has_method(*p_method), false, "Tween target object has no method named: " + *p_method + ".");
+		ERR_FAIL_COND_V_MSG(!p_object->has_method(*p_method), false, "Threen target object has no method named: " + *p_method + ".");
 
 		data.key.push_back(*p_method);
 		data.concatenated_key = *p_method;
@@ -1413,7 +1413,7 @@ bool Tween::_build_interpolation(InterpolateType p_interpolation_type, Object *p
 	return true;
 }
 
-bool Tween::interpolate_property(Object *p_object, NodePath p_property, Variant p_initial_val, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::interpolate_property(Object *p_object, NodePath p_property, Variant p_initial_val, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// If we are busy updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("interpolate_property", p_object, p_property, p_initial_val, p_final_val, p_duration, p_trans_type, p_ease_type, p_delay);
@@ -1421,7 +1421,7 @@ bool Tween::interpolate_property(Object *p_object, NodePath p_property, Variant 
 	}
 
 	// Check that the target object is valid
-	ERR_FAIL_COND_V_MSG(p_object == nullptr, false, vformat("The Tween \"%s\"'s target node is `null`. Is the node reference correct?", get_name()));
+	ERR_FAIL_COND_V_MSG(p_object == nullptr, false, vformat("The Threen \"%s\"'s target node is `null`. Is the node reference correct?", get_name()));
 
 	// Get the property from the node path
 	p_property = p_property.get_as_property_path();
@@ -1445,7 +1445,7 @@ bool Tween::interpolate_property(Object *p_object, NodePath p_property, Variant 
 	return result;
 }
 
-bool Tween::interpolate_method(Object *p_object, StringName p_method, Variant p_initial_val, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::interpolate_method(Object *p_object, StringName p_method, Variant p_initial_val, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// If we are busy updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("interpolate_method", p_object, p_method, p_initial_val, p_final_val, p_duration, p_trans_type, p_ease_type, p_delay);
@@ -1453,7 +1453,7 @@ bool Tween::interpolate_method(Object *p_object, StringName p_method, Variant p_
 	}
 
 	// Check that the target object is valid
-	ERR_FAIL_COND_V_MSG(p_object == nullptr, false, vformat("The Tween \"%s\"'s target node is `null`. Is the node reference correct?", get_name()));
+	ERR_FAIL_COND_V_MSG(p_object == nullptr, false, vformat("The Threen \"%s\"'s target node is `null`. Is the node reference correct?", get_name()));
 
 	// Convert any integers into REALs as they are better for interpolation
 	if (p_initial_val.get_type() == Variant::INT) {
@@ -1468,7 +1468,7 @@ bool Tween::interpolate_method(Object *p_object, StringName p_method, Variant p_
 	return result;
 }
 
-bool Tween::interpolate_callback(Object *p_object, real_t p_duration, String p_callback, VARIANT_ARG_DECLARE) {
+bool Threen::interpolate_callback(Object *p_object, real_t p_duration, String p_callback, VARIANT_ARG_DECLARE) {
 	// If we are already updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("interpolate_callback", p_object, p_duration, p_callback, p_arg1, p_arg2, p_arg3, p_arg4, p_arg5);
@@ -1527,7 +1527,7 @@ bool Tween::interpolate_callback(Object *p_object, real_t p_duration, String p_c
 	return true;
 }
 
-bool Tween::interpolate_deferred_callback(Object *p_object, real_t p_duration, String p_callback, VARIANT_ARG_DECLARE) {
+bool Threen::interpolate_deferred_callback(Object *p_object, real_t p_duration, String p_callback, VARIANT_ARG_DECLARE) {
 	// If we are already updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("interpolate_deferred_callback", p_object, p_duration, p_callback, p_arg1, p_arg2, p_arg3, p_arg4, p_arg5);
@@ -1596,7 +1596,7 @@ bool Tween::interpolate_deferred_callback(Object *p_object, real_t p_duration, S
 	return true;
 }
 
-bool Tween::follow_property(Object *p_object, NodePath p_property, Variant p_initial_val, Object *p_target, NodePath p_target_property, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::follow_property(Object *p_object, NodePath p_property, Variant p_initial_val, Object *p_target, NodePath p_target_property, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// If we are already updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("follow_property", p_object, p_property, p_initial_val, p_target, p_target_property, p_duration, p_trans_type, p_ease_type, p_delay);
@@ -1673,7 +1673,7 @@ bool Tween::follow_property(Object *p_object, NodePath p_property, Variant p_ini
 	return true;
 }
 
-bool Tween::follow_method(Object *p_object, StringName p_method, Variant p_initial_val, Object *p_target, StringName p_target_method, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::follow_method(Object *p_object, StringName p_method, Variant p_initial_val, Object *p_target, StringName p_target_method, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// If we are currently updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("follow_method", p_object, p_method, p_initial_val, p_target, p_target_method, p_duration, p_trans_type, p_ease_type, p_delay);
@@ -1737,7 +1737,7 @@ bool Tween::follow_method(Object *p_object, StringName p_method, Variant p_initi
 	return true;
 }
 
-bool Tween::targeting_property(Object *p_object, NodePath p_property, Object *p_initial, NodePath p_initial_property, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::targeting_property(Object *p_object, NodePath p_property, Object *p_initial, NodePath p_initial_property, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// If we are currently updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("targeting_property", p_object, p_property, p_initial, p_initial_property, p_final_val, p_duration, p_trans_type, p_ease_type, p_delay);
@@ -1811,7 +1811,7 @@ bool Tween::targeting_property(Object *p_object, NodePath p_property, Object *p_
 	return true;
 }
 
-bool Tween::targeting_method(Object *p_object, StringName p_method, Object *p_initial, StringName p_initial_method, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
+bool Threen::targeting_method(Object *p_object, StringName p_method, Object *p_initial, StringName p_initial_method, Variant p_final_val, real_t p_duration, TransitionType p_trans_type, EaseType p_ease_type, real_t p_delay) {
 	// If we are currently updating, call this function again later
 	if (pending_update != 0) {
 		_add_pending_command("targeting_method", p_object, p_method, p_initial, p_initial_method, p_final_val, p_duration, p_trans_type, p_ease_type, p_delay);
@@ -1882,7 +1882,7 @@ bool Tween::targeting_method(Object *p_object, StringName p_method, Object *p_in
 	return true;
 }
 
-Tween::Tween() {
+Threen::Threen() {
 	// Initialize tween attributes
 	tween_process_mode = TWEEN_PROCESS_IDLE;
 	repeat = false;
@@ -1891,5 +1891,5 @@ Tween::Tween() {
 	uid = 0;
 }
 
-Tween::~Tween() {
+Threen::~Threen() {
 }
