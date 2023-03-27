@@ -31,7 +31,16 @@
 #ifndef THREEN_H
 #define THREEN_H
 
-#include "scene/main/node.h"
+#include <godot_cpp/classes/node.hpp>
+#include <godot_cpp/classes/object.hpp>
+#include <godot_cpp/templates/vector.hpp>
+#include <godot_cpp/variant/variant.hpp>
+
+using namespace godot;
+
+// Helper defines ported from 3.x.
+#define VARIANT_ARG_MAX 8
+#define VARIANT_ARG_DECLARE const Variant &p_arg1, const Variant &p_arg2, const Variant &p_arg3, const Variant &p_arg4, const Variant &p_arg5, const Variant &p_arg6, const Variant &p_arg7, const Variant &p_arg8
 
 class Threen : public Node {
 	GDCLASS(Threen, Node);

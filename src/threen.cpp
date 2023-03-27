@@ -30,8 +30,34 @@
 
 #include "threen.h"
 
-#include "core/method_bind_ext.gen.inc"
-#include "scene/animation/easing_equations.h"
+#include "easing_equations.h"
+
+#include <godot_cpp/core/class_db.hpp>
+
+using namespace godot;
+
+// Helpers to handle the difference between core Object::get_indexed and the bindings version,
+// and in this class we only care about subnames.
+static NodePath nodepath_from_subnames(const Vector<StringName> &p_subnames) {
+	String spath;
+	for (int i = 0; i < p_subnames.size(); i++) {
+		spath += ":" + String(p_subnames[i]);
+	}
+	return NodePath(spath);
+}
+
+static Vector<StringName> nodepath_get_subnames(const NodePath &p_nodepath) {
+	PackedStringArray sv = p_nodepath.get_concatenated_subnames().split(":");
+	Vector<StringName> snv;
+	for (int i = 0; i < sv.size(); i++) {
+		snv.push_back(StringName(sv[i]));
+	}
+	return snv;
+}
+
+static NodePath nodepath_subnames_only(const NodePath &p_nodepath) {
+	return nodepath_from_subnames(nodepath_get_subnames(p_nodepath));
+}
 
 Threen::interpolater Threen::interpolaters[Threen::TRANS_COUNT][Threen::EASE_COUNT] = {
 	{ &linear::in, &linear::in, &linear::in, &linear::in }, // Linear is the same for each easing.
@@ -130,7 +156,6 @@ void Threen::_process_pending_commands() {
 	for (List<PendingCommand>::Element *E = pending_commands.front(); E; E = E->next()) {
 		// Get the command
 		PendingCommand &cmd = E->get();
-		Variant::CallError err;
 
 		// Grab all of the arguments for the command
 		Variant *arg[10] = {
@@ -147,7 +172,7 @@ void Threen::_process_pending_commands() {
 		};
 
 		// Execute the command (and retrieve any errors)
-		this->call(cmd.key, (const Variant **)arg, cmd.args, err);
+		this->call(cmd.key, (const Variant **)arg, cmd.args);
 	}
 
 	// Clear the pending commands
@@ -194,7 +219,7 @@ void Threen::_get_property_list(List<PropertyInfo> *p_list) const {
 	// Add the property info for the Threen object
 	p_list->push_back(PropertyInfo(Variant::BOOL, "playback/active", PROPERTY_HINT_NONE, ""));
 	p_list->push_back(PropertyInfo(Variant::BOOL, "playback/repeat", PROPERTY_HINT_NONE, ""));
-	p_list->push_back(PropertyInfo(Variant::REAL, "playback/speed", PROPERTY_HINT_RANGE, "-64,64,0.01"));
+	p_list->push_back(PropertyInfo(Variant::FLOAT, "playback/speed", PROPERTY_HINT_RANGE, "-64,64,0.01"));
 }
 
 void Threen::_notification(int p_what) {
@@ -290,14 +315,14 @@ void Threen::_bind_methods() {
 
 	// Add the Threen signals
 	ADD_SIGNAL(MethodInfo("tween_started", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key")));
-	ADD_SIGNAL(MethodInfo("tween_step", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key"), PropertyInfo(Variant::REAL, "elapsed"), PropertyInfo(Variant::OBJECT, "value")));
+	ADD_SIGNAL(MethodInfo("tween_step", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key"), PropertyInfo(Variant::FLOAT, "elapsed"), PropertyInfo(Variant::OBJECT, "value")));
 	ADD_SIGNAL(MethodInfo("tween_completed", PropertyInfo(Variant::OBJECT, "object"), PropertyInfo(Variant::NODE_PATH, "key")));
 	ADD_SIGNAL(MethodInfo("tween_all_completed"));
 
 	// Add the properties and tie them to the getters and setters
 	ADD_PROPERTY(PropertyInfo(Variant::BOOL, "repeat"), "set_repeat", "is_repeat");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "playback_process_mode", PROPERTY_HINT_ENUM, "Physics,Idle"), "set_tween_process_mode", "get_tween_process_mode");
-	ADD_PROPERTY(PropertyInfo(Variant::REAL, "playback_speed", PROPERTY_HINT_RANGE, "-64,64,0.01"), "set_speed_scale", "get_speed_scale");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "playback_speed", PROPERTY_HINT_RANGE, "-64,64,0.01"), "set_speed_scale", "get_speed_scale");
 
 	// Bind Idle vs Physics process
 	BIND_ENUM_CONSTANT(TWEEN_PROCESS_PHYSICS);
@@ -343,14 +368,11 @@ Variant Threen::_get_initial_val(const InterpolateData &p_data) const {
 			Variant initial_val;
 			if (p_data.type == TARGETING_PROPERTY) {
 				// Get the property from the target object
-				bool valid = false;
-				initial_val = object->get_indexed(p_data.target_key, &valid);
-				ERR_FAIL_COND_V(!valid, p_data.initial_val);
+				initial_val = object->get_indexed(nodepath_from_subnames(p_data.target_key));
 			} else {
 				// Call the method and get the initial value from it
-				Variant::CallError error;
-				initial_val = object->call(p_data.target_key[0], nullptr, 0, error);
-				ERR_FAIL_COND_V(error.error != Variant::CallError::CALL_OK, p_data.initial_val);
+				initial_val = object->call(p_data.target_key[0], nullptr, 0);
+				//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, p_data.initial_val);
 			}
 			return initial_val;
 		}
@@ -375,14 +397,11 @@ Variant Threen::_get_final_val(const InterpolateData &p_data) const {
 			Variant final_val;
 			if (p_data.type == FOLLOW_PROPERTY) {
 				// Read the property as-is
-				bool valid = false;
-				final_val = target->get_indexed(p_data.target_key, &valid);
-				ERR_FAIL_COND_V(!valid, p_data.initial_val);
+				final_val = target->get_indexed(nodepath_from_subnames(p_data.target_key));
 			} else {
 				// We're looking at a method. Call the method on the target object
-				Variant::CallError error;
-				final_val = target->call(p_data.target_key[0], nullptr, 0, error);
-				ERR_FAIL_COND_V(error.error != Variant::CallError::CALL_OK, p_data.initial_val);
+				final_val = target->call(p_data.target_key[0], nullptr, 0);
+				//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, p_data.initial_val);
 			}
 
 			// If we're looking at an INT value, instead convert it to a REAL
@@ -418,14 +437,11 @@ Variant &Threen::_get_delta_val(InterpolateData &p_data) {
 			Variant final_val;
 			if (p_data.type == FOLLOW_PROPERTY) {
 				// Read the property as-is
-				bool valid = false;
-				final_val = target->get_indexed(p_data.target_key, &valid);
-				ERR_FAIL_COND_V(!valid, p_data.initial_val);
+				final_val = target->get_indexed(nodepath_from_subnames(p_data.target_key));
 			} else {
 				// We're looking at a method. Call the method on the target object
-				Variant::CallError error;
-				final_val = target->call(p_data.target_key[0], nullptr, 0, error);
-				ERR_FAIL_COND_V(error.error != Variant::CallError::CALL_OK, p_data.initial_val);
+				final_val = target->call(p_data.target_key[0], nullptr, 0);
+				//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, p_data.initial_val);
 			}
 
 			// If we're looking at an INT value, instead convert it to a REAL
@@ -484,7 +500,7 @@ Variant Threen::_run_equation(InterpolateData &p_data) {
 			result = (int)run_equation(p_data.trans_type, p_data.ease_type, p_data.elapsed - p_data.delay, (int)initial_val, (int)delta_val, p_data.duration);
 			break;
 
-		case Variant::REAL:
+		case Variant::FLOAT:
 			// Run the REAL specific equation
 			result = run_equation(p_data.trans_type, p_data.ease_type, p_data.elapsed - p_data.delay, (real_t)initial_val, (real_t)delta_val, p_data.duration);
 			break;
@@ -538,20 +554,20 @@ Variant Threen::_run_equation(InterpolateData &p_data) {
 
 			// Execute the equation on the transforms and mutate the r transform
 			// This uses the custom APPLY_EQUATION macro defined above
-			APPLY_EQUATION(elements[0][0]);
-			APPLY_EQUATION(elements[0][1]);
-			APPLY_EQUATION(elements[1][0]);
-			APPLY_EQUATION(elements[1][1]);
-			APPLY_EQUATION(elements[2][0]);
-			APPLY_EQUATION(elements[2][1]);
+			APPLY_EQUATION(columns[0][0]);
+			APPLY_EQUATION(columns[0][1]);
+			APPLY_EQUATION(columns[1][0]);
+			APPLY_EQUATION(columns[1][1]);
+			APPLY_EQUATION(columns[2][0]);
+			APPLY_EQUATION(columns[2][1]);
 			result = r;
 		} break;
 
-		case Variant::QUAT: {
+		case Variant::QUATERNION: {
 			// Get the quaternian for the initial and delta values
-			Quat i = initial_val;
-			Quat d = delta_val;
-			Quat r;
+			Quaternion i = initial_val;
+			Quaternion d = delta_val;
+			Quaternion r;
 
 			// Execute the equation on the quaternian values and mutate the r quaternian
 			// This uses the custom APPLY_EQUATION macro defined above
@@ -587,35 +603,35 @@ Variant Threen::_run_equation(InterpolateData &p_data) {
 
 			// Execute the equation on all the basis and mutate the r basis
 			// This uses the custom APPLY_EQUATION macro defined above
-			APPLY_EQUATION(elements[0][0]);
-			APPLY_EQUATION(elements[0][1]);
-			APPLY_EQUATION(elements[0][2]);
-			APPLY_EQUATION(elements[1][0]);
-			APPLY_EQUATION(elements[1][1]);
-			APPLY_EQUATION(elements[1][2]);
-			APPLY_EQUATION(elements[2][0]);
-			APPLY_EQUATION(elements[2][1]);
-			APPLY_EQUATION(elements[2][2]);
+			APPLY_EQUATION(rows[0][0]);
+			APPLY_EQUATION(rows[0][1]);
+			APPLY_EQUATION(rows[0][2]);
+			APPLY_EQUATION(rows[1][0]);
+			APPLY_EQUATION(rows[1][1]);
+			APPLY_EQUATION(rows[1][2]);
+			APPLY_EQUATION(rows[2][0]);
+			APPLY_EQUATION(rows[2][1]);
+			APPLY_EQUATION(rows[2][2]);
 			result = r;
 		} break;
 
-		case Variant::TRANSFORM: {
+		case Variant::TRANSFORM3D: {
 			// Get the transforms for the initial and delta values
-			Transform i = initial_val;
-			Transform d = delta_val;
-			Transform r;
+			Transform3D i = initial_val;
+			Transform3D d = delta_val;
+			Transform3D r;
 
 			// Execute the equation for each of the transforms and their origin and mutate the r transform
 			// This uses the custom APPLY_EQUATION macro defined above
-			APPLY_EQUATION(basis.elements[0][0]);
-			APPLY_EQUATION(basis.elements[0][1]);
-			APPLY_EQUATION(basis.elements[0][2]);
-			APPLY_EQUATION(basis.elements[1][0]);
-			APPLY_EQUATION(basis.elements[1][1]);
-			APPLY_EQUATION(basis.elements[1][2]);
-			APPLY_EQUATION(basis.elements[2][0]);
-			APPLY_EQUATION(basis.elements[2][1]);
-			APPLY_EQUATION(basis.elements[2][2]);
+			APPLY_EQUATION(basis.rows[0][0]);
+			APPLY_EQUATION(basis.rows[0][1]);
+			APPLY_EQUATION(basis.rows[0][2]);
+			APPLY_EQUATION(basis.rows[1][0]);
+			APPLY_EQUATION(basis.rows[1][1]);
+			APPLY_EQUATION(basis.rows[1][2]);
+			APPLY_EQUATION(basis.rows[2][0]);
+			APPLY_EQUATION(basis.rows[2][1]);
+			APPLY_EQUATION(basis.rows[2][2]);
 			APPLY_EQUATION(origin.x);
 			APPLY_EQUATION(origin.y);
 			APPLY_EQUATION(origin.z);
@@ -658,29 +674,28 @@ bool Threen::_apply_tween_value(InterpolateData &p_data, Variant &value) {
 		case FOLLOW_PROPERTY:
 		case TARGETING_PROPERTY: {
 			// Simply set the property on the object
-			bool valid = false;
-			object->set_indexed(p_data.key, value, &valid);
-			return valid;
+			object->set_indexed(nodepath_from_subnames(p_data.key), value);
+			return true;
 		}
 
 		case INTER_METHOD:
 		case FOLLOW_METHOD:
 		case TARGETING_METHOD: {
 			// We want to call the method on the target object
-			Variant::CallError error;
 
 			// Do we have a non-nil value passed in?
 			if (value.get_type() != Variant::NIL) {
 				// Pass it as an argument to the function call
 				Variant *arg[1] = { &value };
-				object->call(p_data.key[0], (const Variant **)arg, 1, error);
+				object->call(p_data.key[0], (const Variant **)arg, 1);
 			} else {
 				// Don't pass any argument
-				object->call(p_data.key[0], nullptr, 0, error);
+				object->call(p_data.key[0], nullptr, 0);
 			}
 
 			// Did we get an error from the function call?
-			return error.error == Variant::CallError::CALL_OK;
+			//return error.error == GDEXTENSION_CALL_OK;
+			return true;
 		}
 
 		case INTER_CALLBACK:
@@ -756,7 +771,7 @@ void Threen::_tween_process(float p_delta) {
 		} else if (prev_delaying) {
 			// We can apply the tween's value to the data and emit that the tween has started
 			_apply_tween_value(data, data.initial_val);
-			emit_signal("tween_started", object, NodePath(Vector<StringName>(), data.key, false));
+			emit_signal("tween_started", object, nodepath_from_subnames(data.key));
 		}
 
 		// Are we at the end of the tween?
@@ -806,7 +821,6 @@ void Threen::_tween_process(float p_delta) {
 					}
 				} else {
 					// Call the function directly with the arguments
-					Variant::CallError error;
 					Variant *arg[VARIANT_ARG_MAX] = {
 						&data.arg[0],
 						&data.arg[1],
@@ -817,7 +831,7 @@ void Threen::_tween_process(float p_delta) {
 						&data.arg[6],
 						&data.arg[7],
 					};
-					object->call(data.key[0], (const Variant **)arg, data.args, error);
+					object->call(data.key[0], (const Variant **)arg, data.args);
 				}
 			}
 		} else {
@@ -826,7 +840,7 @@ void Threen::_tween_process(float p_delta) {
 			_apply_tween_value(data, result);
 
 			// Emit that the tween has taken a step
-			emit_signal("tween_step", object, NodePath(Vector<StringName>(), data.key, false), data.elapsed, result);
+			emit_signal("tween_step", object, nodepath_from_subnames(data.key), data.elapsed, result);
 		}
 
 		// Is the tween now finished?
@@ -836,7 +850,7 @@ void Threen::_tween_process(float p_delta) {
 			_apply_tween_value(data, final_val);
 
 			// Emit the signal
-			emit_signal("tween_completed", object, NodePath(Vector<StringName>(), data.key, false));
+			emit_signal("tween_completed", object, nodepath_from_subnames(data.key));
 
 			// If we are not repeating the tween, remove it
 			if (!repeat) {
@@ -943,7 +957,7 @@ bool Threen::reset(Object *p_object, StringName p_key) {
 		}
 
 		// Do we have the correct object and key?
-		if (object == p_object && (data.concatenated_key == p_key || p_key == "")) {
+		if (object == p_object && (data.concatenated_key == p_key || p_key == StringName())) {
 			// Reset the tween to the initial state
 			data.elapsed = 0;
 			data.finish = false;
@@ -988,7 +1002,7 @@ bool Threen::stop(Object *p_object, StringName p_key) {
 		}
 
 		// Is this the correct object and does it have the given key?
-		if (object == p_object && (data.concatenated_key == p_key || p_key == "")) {
+		if (object == p_object && (data.concatenated_key == p_key || p_key == StringName())) {
 			// Disable the tween
 			data.active = false;
 		}
@@ -1029,7 +1043,7 @@ bool Threen::resume(Object *p_object, StringName p_key) {
 		}
 
 		// If the object and string key match, activate it
-		if (object == p_object && (data.concatenated_key == p_key || p_key == "")) {
+		if (object == p_object && (data.concatenated_key == p_key || p_key == StringName())) {
 			data.active = true;
 		}
 	}
@@ -1071,7 +1085,7 @@ bool Threen::remove(Object *p_object, StringName p_key) {
 		}
 
 		// If the target object and string key match, queue it for removal
-		if (object == p_object && (data.concatenated_key == p_key || p_key == "")) {
+		if (object == p_object && (data.concatenated_key == p_key || p_key == StringName())) {
 			for_removal.push_back(E);
 		}
 	}
@@ -1222,7 +1236,7 @@ bool Threen::_calc_delta_val(const Variant &p_initial_val, const Variant &p_fina
 			delta_val = (int)final_val - (int)initial_val;
 			break;
 
-		case Variant::REAL:
+		case Variant::FLOAT:
 			// Convert to REAL and find the delta
 			delta_val = (real_t)final_val - (real_t)initial_val;
 			break;
@@ -1249,18 +1263,18 @@ bool Threen::_calc_delta_val(const Variant &p_initial_val, const Variant &p_fina
 			Transform2D i = initial_val;
 			Transform2D f = final_val;
 			Transform2D d = Transform2D();
-			d[0][0] = f.elements[0][0] - i.elements[0][0];
-			d[0][1] = f.elements[0][1] - i.elements[0][1];
-			d[1][0] = f.elements[1][0] - i.elements[1][0];
-			d[1][1] = f.elements[1][1] - i.elements[1][1];
-			d[2][0] = f.elements[2][0] - i.elements[2][0];
-			d[2][1] = f.elements[2][1] - i.elements[2][1];
+			d[0][0] = f.columns[0][0] - i.columns[0][0];
+			d[0][1] = f.columns[0][1] - i.columns[0][1];
+			d[1][0] = f.columns[1][0] - i.columns[1][0];
+			d[1][1] = f.columns[1][1] - i.columns[1][1];
+			d[2][0] = f.columns[2][0] - i.columns[2][0];
+			d[2][1] = f.columns[2][1] - i.columns[2][1];
 			delta_val = d;
 		} break;
 
-		case Variant::QUAT:
+		case Variant::QUATERNION:
 			// Convert to quaternianls and find the delta
-			delta_val = final_val.operator Quat() - initial_val.operator Quat();
+			delta_val = final_val.operator Quaternion() - initial_val.operator Quaternion();
 			break;
 
 		case Variant::AABB: {
@@ -1274,31 +1288,31 @@ bool Threen::_calc_delta_val(const Variant &p_initial_val, const Variant &p_fina
 			// Build a new basis which is the delta between the initial and final values
 			Basis i = initial_val;
 			Basis f = final_val;
-			delta_val = Basis(f.elements[0][0] - i.elements[0][0],
-					f.elements[0][1] - i.elements[0][1],
-					f.elements[0][2] - i.elements[0][2],
-					f.elements[1][0] - i.elements[1][0],
-					f.elements[1][1] - i.elements[1][1],
-					f.elements[1][2] - i.elements[1][2],
-					f.elements[2][0] - i.elements[2][0],
-					f.elements[2][1] - i.elements[2][1],
-					f.elements[2][2] - i.elements[2][2]);
+			delta_val = Basis(f.rows[0][0] - i.rows[0][0],
+					f.rows[0][1] - i.rows[0][1],
+					f.rows[0][2] - i.rows[0][2],
+					f.rows[1][0] - i.rows[1][0],
+					f.rows[1][1] - i.rows[1][1],
+					f.rows[1][2] - i.rows[1][2],
+					f.rows[2][0] - i.rows[2][0],
+					f.rows[2][1] - i.rows[2][1],
+					f.rows[2][2] - i.rows[2][2]);
 		} break;
 
-		case Variant::TRANSFORM: {
+		case Variant::TRANSFORM3D: {
 			// Build a new transform which is the difference between the initial and final values
-			Transform i = initial_val;
-			Transform f = final_val;
-			Transform d;
-			d.set(f.basis.elements[0][0] - i.basis.elements[0][0],
-					f.basis.elements[0][1] - i.basis.elements[0][1],
-					f.basis.elements[0][2] - i.basis.elements[0][2],
-					f.basis.elements[1][0] - i.basis.elements[1][0],
-					f.basis.elements[1][1] - i.basis.elements[1][1],
-					f.basis.elements[1][2] - i.basis.elements[1][2],
-					f.basis.elements[2][0] - i.basis.elements[2][0],
-					f.basis.elements[2][1] - i.basis.elements[2][1],
-					f.basis.elements[2][2] - i.basis.elements[2][2],
+			Transform3D i = initial_val;
+			Transform3D f = final_val;
+			Transform3D d;
+			d.set(f.basis.rows[0][0] - i.basis.rows[0][0],
+					f.basis.rows[0][1] - i.basis.rows[0][1],
+					f.basis.rows[0][2] - i.basis.rows[0][2],
+					f.basis.rows[1][0] - i.basis.rows[1][0],
+					f.basis.rows[1][1] - i.basis.rows[1][1],
+					f.basis.rows[1][2] - i.basis.rows[1][2],
+					f.basis.rows[2][0] - i.basis.rows[2][0],
+					f.basis.rows[2][1] - i.basis.rows[2][1],
+					f.basis.rows[2][2] - i.basis.rows[2][2],
 					f.origin.x - i.origin.x,
 					f.origin.y - i.origin.y,
 					f.origin.z - i.origin.z);
@@ -1317,15 +1331,15 @@ bool Threen::_calc_delta_val(const Variant &p_initial_val, const Variant &p_fina
 			static Variant::Type supported_types[] = {
 				Variant::BOOL,
 				Variant::INT,
-				Variant::REAL,
+				Variant::FLOAT,
 				Variant::VECTOR2,
 				Variant::RECT2,
 				Variant::VECTOR3,
 				Variant::TRANSFORM2D,
-				Variant::QUAT,
+				Variant::QUATERNION,
 				Variant::AABB,
 				Variant::BASIS,
-				Variant::TRANSFORM,
+				Variant::TRANSFORM3D,
 				Variant::COLOR,
 			};
 
@@ -1385,12 +1399,14 @@ bool Threen::_build_interpolation(InterpolateType p_interpolation_type, Object *
 
 	// Is the property defined?
 	if (p_property) {
+		/* FIXME: Can't validate as GDExtension's `get_indexed` and `get` don't expose `r_valid`.
 		// Check that the object actually contains the given property
 		bool prop_valid = false;
 		p_object->get_indexed(p_property->get_subnames(), &prop_valid);
 		ERR_FAIL_COND_V_MSG(!prop_valid, false, "Threen target object has no property named: " + p_property->get_concatenated_subnames() + ".");
+		*/
 
-		data.key = p_property->get_subnames();
+		data.key = nodepath_get_subnames(*p_property);
 		data.concatenated_key = p_property->get_concatenated_subnames();
 	}
 
@@ -1429,7 +1445,7 @@ bool Threen::interpolate_property(Object *p_object, NodePath p_property, Variant
 	// If no initial value given, grab the initial value from the object
 	// TODO: Is this documented? This is very useful and removes a lot of clutter from tweens!
 	if (p_initial_val.get_type() == Variant::NIL) {
-		p_initial_val = p_object->get_indexed(p_property.get_subnames());
+		p_initial_val = p_object->get_indexed(nodepath_subnames_only(p_property));
 	}
 
 	// Convert any integers into REALs as they are better for interpolation
@@ -1614,7 +1630,7 @@ bool Threen::follow_property(Object *p_object, NodePath p_property, Variant p_in
 	// If no initial value is given, grab it from the source object
 	// TODO: Is this documented? It's really helpful for decluttering tweens
 	if (p_initial_val.get_type() == Variant::NIL) {
-		p_initial_val = p_object->get_indexed(p_property.get_subnames());
+		p_initial_val = p_object->get_indexed(nodepath_subnames_only(p_property));
 	}
 
 	// Convert initial INT values to REAL as they are better for interpolation
@@ -1632,6 +1648,7 @@ bool Threen::follow_property(Object *p_object, NodePath p_property, Variant p_in
 	// No negative delays
 	ERR_FAIL_COND_V(p_delay < 0, false);
 
+	/* FIXME: Can't validate as GDExtension's `get_indexed` and `get` don't expose `r_valid`.
 	// Confirm the source and target objects have the desired properties
 	bool prop_valid = false;
 	p_object->get_indexed(p_property.get_subnames(), &prop_valid);
@@ -1640,6 +1657,8 @@ bool Threen::follow_property(Object *p_object, NodePath p_property, Variant p_in
 	bool target_prop_valid = false;
 	Variant target_val = p_target->get_indexed(p_target_property.get_subnames(), &target_prop_valid);
 	ERR_FAIL_COND_V(!target_prop_valid, false);
+	*/
+	Variant target_val = p_target->get_indexed(nodepath_subnames_only(p_target_property));
 
 	// Convert target INT to REAL since it is better for interpolation
 	if (target_val.get_type() == Variant::INT) {
@@ -1658,11 +1677,11 @@ bool Threen::follow_property(Object *p_object, NodePath p_property, Variant p_in
 
 	// Give the InterpolateData it's configuration
 	data.id = p_object->get_instance_id();
-	data.key = p_property.get_subnames();
+	data.key = nodepath_get_subnames(p_property);
 	data.concatenated_key = p_property.get_concatenated_subnames();
 	data.initial_val = p_initial_val;
 	data.target_id = p_target->get_instance_id();
-	data.target_key = p_target_property.get_subnames();
+	data.target_key = nodepath_get_subnames(p_target_property);
 	data.duration = p_duration;
 	data.trans_type = p_trans_type;
 	data.ease_type = p_ease_type;
@@ -1703,9 +1722,8 @@ bool Threen::follow_method(Object *p_object, StringName p_method, Variant p_init
 	ERR_FAIL_COND_V_MSG(!p_target->has_method(p_target_method), false, "Target has no method named: " + p_target_method + ".");
 
 	// Call the method to get the target value
-	Variant::CallError error;
-	Variant target_val = p_target->call(p_target_method, nullptr, 0, error);
-	ERR_FAIL_COND_V(error.error != Variant::CallError::CALL_OK, false);
+	Variant target_val = p_target->call(p_target_method, nullptr, 0);
+	//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, false);
 
 	// Convert target INT values to REAL as they are better for interpolation
 	if (target_val.get_type() == Variant::INT) {
@@ -1766,6 +1784,7 @@ bool Threen::targeting_property(Object *p_object, NodePath p_property, Object *p
 	// No negative delays
 	ERR_FAIL_COND_V(p_delay < 0, false);
 
+	/* FIXME: Can't validate as GDExtension's `get_indexed` and `get` don't expose `r_valid`.
 	// Ensure the initial and target properties exist on their objects
 	bool prop_valid = false;
 	p_object->get_indexed(p_property.get_subnames(), &prop_valid);
@@ -1774,6 +1793,8 @@ bool Threen::targeting_property(Object *p_object, NodePath p_property, Object *p
 	bool initial_prop_valid = false;
 	Variant initial_val = p_initial->get_indexed(p_initial_property.get_subnames(), &initial_prop_valid);
 	ERR_FAIL_COND_V(!initial_prop_valid, false);
+	*/
+	Variant initial_val = p_initial->get_indexed(nodepath_subnames_only(p_initial_property));
 
 	// Convert the initial INT value to REAL as it is better for interpolation
 	if (initial_val.get_type() == Variant::INT) {
@@ -1790,10 +1811,10 @@ bool Threen::targeting_property(Object *p_object, NodePath p_property, Object *p
 
 	// Give the data it's configuration
 	data.id = p_object->get_instance_id();
-	data.key = p_property.get_subnames();
+	data.key = nodepath_get_subnames(p_property);
 	data.concatenated_key = p_property.get_concatenated_subnames();
 	data.target_id = p_initial->get_instance_id();
-	data.target_key = p_initial_property.get_subnames();
+	data.target_key = nodepath_get_subnames(p_initial_property);
 	data.initial_val = initial_val;
 	data.final_val = p_final_val;
 	data.duration = p_duration;
@@ -1842,9 +1863,8 @@ bool Threen::targeting_method(Object *p_object, StringName p_method, Object *p_i
 	ERR_FAIL_COND_V_MSG(!p_initial->has_method(p_initial_method), false, "Initial Object has no method named: " + p_initial_method + ".");
 
 	// Call the method to get the initial value
-	Variant::CallError error;
-	Variant initial_val = p_initial->call(p_initial_method, nullptr, 0, error);
-	ERR_FAIL_COND_V(error.error != Variant::CallError::CALL_OK, false);
+	Variant initial_val = p_initial->call(p_initial_method, nullptr, 0);
+	//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, false);
 
 	// Convert initial INT values to REAL as they aer better for interpolation
 	if (initial_val.get_type() == Variant::INT) {
