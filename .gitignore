@@ -2,6 +2,7 @@
 .godot/
 game/bin/summator/*
 .sconsign*.dblite
+*.gen.*
 
 # Binaries and generated
 *.o

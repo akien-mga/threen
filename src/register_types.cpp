@@ -30,9 +30,11 @@
 
 #include "register_types.h"
 
+#include "doc_data_compressed_libthreen.gen.h"
 #include "threen.h"
 
 #include <gdextension_interface.h>
+#include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/core/class_db.hpp>
 #include <godot_cpp/core/defs.hpp>
 #include <godot_cpp/godot.hpp>
@@ -40,10 +42,16 @@
 using namespace godot;
 
 void initialize_threen_types(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SCENE) {
-		return;
+	if (p_level == MODULE_INITIALIZATION_LEVEL_SCENE) {
+		ClassDB::register_class<Threen>();
 	}
-	ClassDB::register_class<Threen>();
+
+	if (p_level == MODULE_INITIALIZATION_LEVEL_EDITOR) {
+		PackedByteArray pba;
+		pba.resize(_doc_data_compressed_size);
+		memcpy(pba.ptrw(), _doc_data_compressed, _doc_data_compressed_size);
+		Engine::get_singleton()->add_extension_class_doc(pba, _doc_data_uncompressed_size);
+	}
 }
 
 void uninitialize_threen_types(ModuleInitializationLevel p_level) {
