@@ -3,7 +3,7 @@
 game/bin/summator/*
 .sconsign*.dblite
 
-# Binaries
+# Binaries and generated
 *.o
 *.os
 *.so
@@ -20,6 +20,7 @@ game/bin/summator/*
 *.includes
 *.idb
 *.exp
+*.gen.*
 
 # Other stuff
 *.log

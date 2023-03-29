@@ -157,22 +157,45 @@ void Threen::_process_pending_commands() {
 		// Get the command
 		PendingCommand &cmd = E->get();
 
-		// Grab all of the arguments for the command
-		Variant *arg[10] = {
-			&cmd.arg[0],
-			&cmd.arg[1],
-			&cmd.arg[2],
-			&cmd.arg[3],
-			&cmd.arg[4],
-			&cmd.arg[5],
-			&cmd.arg[6],
-			&cmd.arg[7],
-			&cmd.arg[8],
-			&cmd.arg[9],
-		};
+		// FIXME: Ugly workaround as we don't have callp exposed in GDExtension.
+		// All the hardcoded vararg logic in this class could be simplified.
 
 		// Execute the command (and retrieve any errors)
-		this->call(cmd.key, (const Variant **)arg, cmd.args);
+		switch (cmd.args) {
+			case 0:
+				this->call(cmd.key);
+				break;
+			case 1:
+				this->call(cmd.key, cmd.arg[0]);
+				break;
+			case 2:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1]);
+				break;
+			case 3:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2]);
+				break;
+			case 4:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3]);
+				break;
+			case 5:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3], cmd.arg[4]);
+				break;
+			case 6:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3], cmd.arg[4], cmd.arg[5]);
+				break;
+			case 7:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3], cmd.arg[4], cmd.arg[5], cmd.arg[6]);
+				break;
+			case 8:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3], cmd.arg[4], cmd.arg[5], cmd.arg[6], cmd.arg[7]);
+				break;
+			case 9:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3], cmd.arg[4], cmd.arg[5], cmd.arg[6], cmd.arg[7], cmd.arg[8]);
+				break;
+			case 10:
+				this->call(cmd.key, cmd.arg[0], cmd.arg[1], cmd.arg[2], cmd.arg[3], cmd.arg[4], cmd.arg[5], cmd.arg[6], cmd.arg[7], cmd.arg[8], cmd.arg[9]);
+				break;
+		}
 	}
 
 	// Clear the pending commands
@@ -371,7 +394,7 @@ Variant Threen::_get_initial_val(const InterpolateData &p_data) const {
 				initial_val = object->get_indexed(nodepath_from_subnames(p_data.target_key));
 			} else {
 				// Call the method and get the initial value from it
-				initial_val = object->call(p_data.target_key[0], nullptr, 0);
+				initial_val = object->call(p_data.target_key[0]);
 				//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, p_data.initial_val);
 			}
 			return initial_val;
@@ -400,7 +423,7 @@ Variant Threen::_get_final_val(const InterpolateData &p_data) const {
 				final_val = target->get_indexed(nodepath_from_subnames(p_data.target_key));
 			} else {
 				// We're looking at a method. Call the method on the target object
-				final_val = target->call(p_data.target_key[0], nullptr, 0);
+				final_val = target->call(p_data.target_key[0]);
 				//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, p_data.initial_val);
 			}
 
@@ -440,7 +463,7 @@ Variant &Threen::_get_delta_val(InterpolateData &p_data) {
 				final_val = target->get_indexed(nodepath_from_subnames(p_data.target_key));
 			} else {
 				// We're looking at a method. Call the method on the target object
-				final_val = target->call(p_data.target_key[0], nullptr, 0);
+				final_val = target->call(p_data.target_key[0]);
 				//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, p_data.initial_val);
 			}
 
@@ -686,11 +709,10 @@ bool Threen::_apply_tween_value(InterpolateData &p_data, Variant &value) {
 			// Do we have a non-nil value passed in?
 			if (value.get_type() != Variant::NIL) {
 				// Pass it as an argument to the function call
-				Variant *arg[1] = { &value };
-				object->call(p_data.key[0], (const Variant **)arg, 1);
+				object->call(p_data.key[0], value);
 			} else {
 				// Don't pass any argument
-				object->call(p_data.key[0], nullptr, 0);
+				object->call(p_data.key[0]);
 			}
 
 			// Did we get an error from the function call?
@@ -821,17 +843,35 @@ void Threen::_tween_process(float p_delta) {
 					}
 				} else {
 					// Call the function directly with the arguments
-					Variant *arg[VARIANT_ARG_MAX] = {
-						&data.arg[0],
-						&data.arg[1],
-						&data.arg[2],
-						&data.arg[3],
-						&data.arg[4],
-						&data.arg[5],
-						&data.arg[6],
-						&data.arg[7],
-					};
-					object->call(data.key[0], (const Variant **)arg, data.args);
+					switch (data.args) {
+						case 0:
+							object->call(data.key[0]);
+							break;
+						case 1:
+							object->call(data.key[0], data.arg[0]);
+							break;
+						case 2:
+							object->call(data.key[0], data.arg[0], data.arg[1]);
+							break;
+						case 3:
+							object->call(data.key[0], data.arg[0], data.arg[1], data.arg[2]);
+							break;
+						case 4:
+							object->call(data.key[0], data.arg[0], data.arg[1], data.arg[2], data.arg[3]);
+							break;
+						case 5:
+							object->call(data.key[0], data.arg[0], data.arg[1], data.arg[2], data.arg[3], data.arg[4]);
+							break;
+						case 6:
+							object->call(data.key[0], data.arg[0], data.arg[1], data.arg[2], data.arg[3], data.arg[4], data.arg[5]);
+							break;
+						case 7:
+							object->call(data.key[0], data.arg[0], data.arg[1], data.arg[2], data.arg[3], data.arg[4], data.arg[5], data.arg[6]);
+							break;
+						case 8:
+							object->call(data.key[0], data.arg[0], data.arg[1], data.arg[2], data.arg[3], data.arg[4], data.arg[5], data.arg[6], data.arg[7]);
+							break;
+					}
 				}
 			}
 		} else {
@@ -1722,7 +1762,7 @@ bool Threen::follow_method(Object *p_object, StringName p_method, Variant p_init
 	ERR_FAIL_COND_V_MSG(!p_target->has_method(p_target_method), false, "Target has no method named: " + p_target_method + ".");
 
 	// Call the method to get the target value
-	Variant target_val = p_target->call(p_target_method, nullptr, 0);
+	Variant target_val = p_target->call(p_target_method);
 	//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, false);
 
 	// Convert target INT values to REAL as they are better for interpolation
@@ -1863,7 +1903,7 @@ bool Threen::targeting_method(Object *p_object, StringName p_method, Object *p_i
 	ERR_FAIL_COND_V_MSG(!p_initial->has_method(p_initial_method), false, "Initial Object has no method named: " + p_initial_method + ".");
 
 	// Call the method to get the initial value
-	Variant initial_val = p_initial->call(p_initial_method, nullptr, 0);
+	Variant initial_val = p_initial->call(p_initial_method);
 	//ERR_FAIL_COND_V(error.error != GDEXTENSION_CALL_OK, false);
 
 	// Convert initial INT values to REAL as they aer better for interpolation
