@@ -3,6 +3,10 @@
 entry_symbol = "threen_library_init"
 compatibility_minimum = "4.1"
 
+[icons]
+
+Threen = "res://bin/Threen.svg"
+
 [libraries]
 
 linux.x86_64.debug = "res://bin/libthreen.linux.template_debug.x86_64.so"
