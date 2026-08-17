@@ -3,10 +3,15 @@
 game/bin/summator/*
 .sconsign*.dblite
 
+# GDExtension libraries
+bin/*.dll
+bin/*.framework/
+bin/*.so
+bin/*.wasm
+
 # Binaries and generated
 *.o
 *.os
-*.so
 *.obj
 *.bc
 *.pyc
