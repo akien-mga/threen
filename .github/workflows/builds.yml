@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   LIBNAME: threen
+  API_VERSION: 4.3
 
 concurrency:
   group: ci-${{github.actor}}-${{github.head_ref || github.run_number}}-${{github.ref}}-macos
@@ -42,28 +43,59 @@ jobs:
             platform: macos
             arch: universal
           - identifier: linux-debug
-            os: ubuntu-latest
+            os: ubuntu-22.04
             name: 🐧 Linux Debug
-            runner: ubuntu-20.04
             target: template_debug
             platform: linux
             arch: x86_64
           - identifier: linux-release
-            os: ubuntu-latest
+            os: ubuntu-22.04
             name: 🐧 Linux Release
-            runner: ubuntu-20.04
             target: template_release
             platform: linux
             arch: x86_64
+          - identifier: web-debug-threads
+            os: ubuntu-latest
+            name: 🌐 Web Debug (Threads)
+            target: template_debug
+            platform: web
+            arch: wasm32
+            suffix: .threads
+            sconsargs: threads=yes
+          - identifier: web-release-threads
+            os: ubuntu-latest
+            name: 🌐 Web Release (Threads)
+            target: template_release
+            platform: web
+            arch: wasm32
+            suffix: .threads
+            sconsargs: threads=yes
+          - identifier: web-debug-nothreads
+            os: ubuntu-latest
+            name: 🌐 Web Debug (No Threads)
+            target: template_debug
+            platform: web
+            arch: wasm32
+            suffix: .nothreads
+            sconsargs: threads=no
+          - identifier: web-release-nothreads
+            os: ubuntu-latest
+            name: 🌐 Web Release (No Threads)
+            target: template_release
+            platform: web
+            arch: wasm32
+            suffix: .nothreads
+            sconsargs: threads=no
+
 
     steps:
       - name: Checkout project
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           submodules: recursive
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -82,20 +114,26 @@ jobs:
 
       - name: Setup MinGW for Windows/MinGW build
         if: ${{ matrix.platform == 'windows' }}
-        uses: egor-tensin/setup-mingw@v2
+        uses: egor-tensin/setup-mingw@v3
         with:
           version: 12.2.0
+
+      - name: Web dependencies
+        if: ${{ matrix.platform == 'web' }}
+        uses: emscripten-core/setup-emsdk@v16
+        with:
+          version: 4.0.20
 
       - name: Compile godot-cpp
         shell: sh
         run: |
-          scons target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}'
+          scons api_version='${{ env.API_VERSION }}' target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}' ${{ matrix.sconsargs }}
         working-directory: godot-cpp
 
       - name: Compile Extension
         shell: sh
         run: |
-          scons target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}'
+          scons api_version='${{ env.API_VERSION }}' target='${{ matrix.target }}' platform='${{ matrix.platform }}' arch='${{ matrix.arch }}' ${{ matrix.sconsargs }}
 
       - name: Delete compilation files
         if: ${{ matrix.platform == 'windows' }}
@@ -103,9 +141,9 @@ jobs:
           Remove-Item bin/* -Include *.exp,*.lib,*.pdb -Force
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: '${{ env.LIBNAME }}.${{ matrix.platform }}.${{ matrix.target }}.${{ matrix.arch }}'
+          name: '${{ env.LIBNAME }}.${{ matrix.platform }}.${{ matrix.target }}.${{ matrix.arch }}${{ matrix.suffix }}'
           path: 'bin/'
 
       - name: Archive Release
@@ -113,7 +151,7 @@ jobs:
         uses: thedoctor0/zip-release@0.7.6
         with:
           type: 'zip'
-          filename: '${{ env.LIBNAME }}.${{ matrix.platform }}.${{ matrix.target }}.${{ matrix.arch }}.zip'
+          filename: '${{ env.LIBNAME }}.${{ matrix.platform }}.${{ matrix.target }}.${{ matrix.arch }}${{ matrix.suffix }}.zip'
           path: 'bin/'
 
       - name: Create and upload asset
@@ -121,7 +159,7 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           allowUpdates: true
-          artifacts: "${{ env.LIBNAME }}.${{ matrix.platform }}.${{ matrix.target }}.${{ matrix.arch }}.zip"
+          artifacts: "${{ env.LIBNAME }}.${{ matrix.platform }}.${{ matrix.target }}.${{ matrix.arch }}${{ matrix.suffix }}.zip"
           omitNameDuringUpdate: true
           omitBodyDuringUpdate: true
           token: ${{ secrets.GITHUB_TOKEN }}

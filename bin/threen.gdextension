@@ -1,19 +1,23 @@
 [configuration]
 
 entry_symbol = "threen_library_init"
-compatibility_minimum = "4.1"
+compatibility_minimum = "4.3"
 
 [icons]
 
-Threen = "res://bin/Threen.svg"
+Threen = "Threen.svg"
 
 [libraries]
 
-linux.x86_64.debug = "res://bin/libthreen.linux.template_debug.x86_64.so"
-linux.x86_64.release = "res://bin/libthreen.linux.template_release.x86_64.so"
-linux.debug.arm64 = "res://bin/libthreen.linux.template_debug.arm64.so"
-linux.release.arm64 = "res://bin/libthreen.linux.template_release.arm64.so"
-windows.x86_64.debug = "res://bin/libthreen.windows.template_debug.x86_64.dll"
-windows.x86_64.release = "res://bin/libthreen.windows.template_release.x86_64.dll"
-macos.debug = "res://bin/libthreen.macos.template_debug.framework"
-macos.release = "res://bin/libthreen.macos.template_release.framework"
+linux.x86_64.debug = "libthreen.linux.template_debug.x86_64.so"
+linux.x86_64.release = "libthreen.linux.template_release.x86_64.so"
+linux.debug.arm64 = "libthreen.linux.template_debug.arm64.so"
+linux.release.arm64 = "libthreen.linux.template_release.arm64.so"
+windows.x86_64.debug = "libthreen.windows.template_debug.x86_64.dll"
+windows.x86_64.release = "libthreen.windows.template_release.x86_64.dll"
+macos.debug = "libthreen.macos.template_debug.framework"
+macos.release = "libthreen.macos.template_release.framework"
+web.wasm32.nothreads.debug = "libthreen.web.template_debug.wasm32.nothreads.wasm"
+web.wasm32.nothreads.release = "libthreen.web.template_release.wasm32.nothreads.wasm"
+web.wasm32.threads.debug = "libthreen.web.template_debug.wasm32.wasm"
+web.wasm32.threads.release = "libthreen.web.template_release.wasm32.wasm"

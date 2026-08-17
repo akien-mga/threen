@@ -19,7 +19,9 @@ the API stays unchanged, i.e. it's still `tween_completed`, etc.
 
 ## How to use
 
-- Compile the library with `scons`.
+- Compile the library with `scons api_version=4.3 platform=<platform> target=template_debug`.
+  * You can use a newer `api_version` if desired.
+  * Repeat the command for other platforms and `template_release` as needed.
 - Copy the `bin` folder to the `demo` folder to try it out with the premade
   project.
 
